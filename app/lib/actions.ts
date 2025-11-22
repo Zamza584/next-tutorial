@@ -39,8 +39,6 @@ export async function createInvoice(prevState: State, formData: FormData) {
     amount: formData.get("amount"),
     status: formData.get("status"),
   });
-  const amountInCents = amount * 100;
-  const date = new Date().toISOString().split("T")[0];
 
   if (!validatedFields.success) {
     return {
@@ -49,13 +47,19 @@ export async function createInvoice(prevState: State, formData: FormData) {
     };
   }
 
+  const { customerId, amount, status } = validatedFields.data;
+  const amountInCents = amount * 100;
+  const date = new Date().toISOString().split("T")[0];
+
   try {
     await sql`
       INSERT INTO invoices (customer_id, amount, status, date)
       VALUES (${customerId}, ${amountInCents}, ${status}, ${date})`;
     //Tip: If you're working with forms that have many fields, you may want to consider using the entries() method with JavaScript's
   } catch (error) {
-    console.log(error);
+    return {
+      message: "Database Error: Failed to Create Invoice.",
+    };
   }
   revalidatePath("/dashboard/invoices");
   redirect("/dashboard/invoices");
